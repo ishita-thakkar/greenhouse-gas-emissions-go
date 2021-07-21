@@ -41,3 +41,13 @@ type CountryEmissionApiResponse struct {
 	Year        int     `json:"year"`
 	Value       float64 `json:"value"`
 }
+
+type CountryEmissionApiRequestUri struct {
+	CountryID int `uri:"id" binding:"required"`
+}
+
+type CountryEmissionApiRequestQuery struct {
+	StartYear int    `form:"startyear" binding:"omitempty,min=0,max=9999"`
+	EndYear   int    `form:"endyear" binding:"omitempty,min=0,max=9999,gtecsfield=StartYear"`
+	Gas       string `form:"gas" binding:"omitempty,alphanum"`
+}
