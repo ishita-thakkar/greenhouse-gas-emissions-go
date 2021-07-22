@@ -15,10 +15,10 @@ import (
 func init() {
 	// uncomment to create tables in db
 	// connections.Db.AutoMigrate(&models.Country{}, &models.EmissionCategory{}, &models.CountryEmission{})
+	// fmt.Println("Database migration completed")
 }
 
 func main() {
-
 	inventory_data := getInventoryDataFromCsv()
 	populateData(inventory_data)
 
@@ -28,7 +28,6 @@ func populateData(inventory_data []models.GreenhouseGas) {
 
 	country_data := make([]models.Country, 1)
 	emission_category_data := make([]models.EmissionCategory, 1)
-	country_emission_data := make([]models.CountryEmission, 1)
 
 	unique_country := make(map[string]bool)
 	unique_emission_category := make(map[string]bool)
@@ -63,13 +62,35 @@ func populateData(inventory_data []models.GreenhouseGas) {
 			unique_emission_category[category] = true
 		}
 		// emission category end
-
 	}
 
-	// country emission start
-	country_map := populateCountry(country_data)
-	emission_category_map := populateEmissionCategory(emission_category_data)
+	// create channels for receiving values from the corresponding goroutines
+	ch1 := make(chan map[string]int)
+	ch2 := make(chan map[string]int)
 
+	go populateCountry(country_data, ch1)
+	go populateEmissionCategory(emission_category_data, ch2)
+
+	var country_map map[string]int
+	var emission_category_map map[string]int
+	// receives values from both goroutines before proceeding
+	for i := 0; i < 2; i++ {
+		select {
+		case country_map = <-ch1:
+			fmt.Println("Received country map from channel ch1")
+		case emission_category_map = <-ch2:
+			fmt.Println("Received emission category map from channel ch2")
+		}
+	}
+
+	fmt.Println("Done inserting countries and emission categories data")
+	populateCountryEmissions(inventory_data, country_map, emission_category_map)
+
+}
+
+func populateCountryEmissions(inventory_data []models.GreenhouseGas, country_map map[string]int, emission_category_map map[string]int) {
+	country_emission_data := make([]models.CountryEmission, 1)
+	// country emission start
 	for _, row := range inventory_data {
 		country_emission := new(models.CountryEmission)
 		country_emission.CountryID = country_map[row.CountryOrArea]
@@ -87,27 +108,26 @@ func populateData(inventory_data []models.GreenhouseGas) {
 	fmt.Println("Inserting country emissions")
 	connections.Db.CreateInBatches(country_emission_data, 9000)
 	// country emission end
-
 }
 
-func populateCountry(country []models.Country) map[string]int {
+func populateCountry(country []models.Country, ch chan map[string]int) {
 	fmt.Println("Inserting countries")
 	connections.Db.CreateInBatches(country, 9000)
 	country_map := make(map[string]int)
 	for _, x := range country {
 		country_map[x.Name] = x.ID
 	}
-	return country_map
+	ch <- country_map
 }
 
-func populateEmissionCategory(emission_category []models.EmissionCategory) map[string]int {
+func populateEmissionCategory(emission_category []models.EmissionCategory, ch chan map[string]int) {
 	fmt.Println("Inserting emission categories")
 	connections.Db.CreateInBatches(emission_category, 9000)
 	emission_category_map := make(map[string]int)
 	for _, x := range emission_category {
 		emission_category_map[x.Name] = x.ID
 	}
-	return emission_category_map
+	ch <- emission_category_map
 }
 
 func getInventoryDataFromCsv() []models.GreenhouseGas {
