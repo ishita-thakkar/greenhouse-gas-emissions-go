@@ -35,11 +35,12 @@ type CountriesApiResponse struct {
 }
 
 type CountryEmissionApiResponse struct {
-	ID          int     `json:"id"`
-	CountryID   int     `json:"country_id"`
-	CountryName string  `json:"country_name"`
-	Year        int     `json:"year"`
-	Value       float64 `json:"value"`
+	ID               int     `json:"id"`
+	CountryID        int     `json:"country_id"`
+	CountryName      string  `json:"country_name"`
+	Year             int     `json:"year"`
+	Value            float64 `json:"value"`
+	EmissionCategory string  `json:"emission_category"`
 }
 
 type CountryEmissionApiRequestUri struct {
