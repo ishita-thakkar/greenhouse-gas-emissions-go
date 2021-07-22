@@ -34,12 +34,11 @@ func Country(c *gin.Context) {
 
 	var country_emission_api_response []models.CountryEmissionApiResponse
 
-	tx := connections.Db.Table("country_emissions").Select("country_emissions.id, countries.id AS country_id, countries.name AS country_name, country_emissions.year, country_emissions.value").Joins("LEFT JOIN countries ON country_emissions.country_id = countries.id")
+	tx := connections.Db.Table("country_emissions").Select("country_emissions.id, countries.id AS country_id, countries.name AS country_name, country_emissions.year, country_emissions.value, emission_categories.name AS emission_category").Joins("LEFT JOIN countries ON country_emissions.country_id = countries.id").Joins("JOIN emission_categories ON emission_categories.id = country_emissions.emission_category_id")
 
 	// adds gas condition in query
 	if inputQuery.Gas != "" {
 		gases := strings.Split(inputQuery.Gas, ",")
-		tx.Joins("JOIN emission_categories ON emission_categories.id = country_emissions.emission_category_id")
 		count := 0
 		gas_where_condition := ""
 		for _, gas := range gases {
