@@ -50,5 +50,5 @@ type CountryEmissionApiRequestUri struct {
 type CountryEmissionApiRequestQuery struct {
 	StartYear int    `form:"startyear" binding:"omitempty,min=0,max=9999"`
 	EndYear   int    `form:"endyear" binding:"omitempty,min=0,max=9999,gtecsfield=StartYear"`
-	Gas       string `form:"gas" binding:"omitempty,alphanum"`
+	Gas       string `form:"gas" binding:"omitempty,max=100"`
 }
